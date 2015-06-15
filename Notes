@@ -1,0 +1,77 @@
+# Docs
+Documentation folder
+
+15/06/2015:
+
+Serial port /dev/ttyS1 needs to be configured before data captured from file.
+Added stty -F /dev/ttyS1 19200 to /etc/init.d/s4wd in the do_start() function.
+This should initialise the port before the /usr/src/s4wd/s4wd program runs.
+
+Removed the wifi button from the drive display.
+Always on.
+
+Removed the 12V display from the drive view. 
+Use DBM4 for 12V monitoring. It has relay out so maybe someone can wire in a buzzer
+directly to DBM4.
+
+Changed the datetime in logging from calender to UTC. Required for chart software.
+* Make sure chart software can convert to UTC and then add the timezone shift.
+
+Only discharge profile being logged at the moment.
+When program starts up, a new file name is created. 
+Every 4 seconds, the motor temp, controller temp, voltage, current, speed and altitude are added to
+a single datetime referenced record. If the current and the speed are both 0, the record is not appended 
+to a list container. Log to file occurs every 5 minutes. If the container is empty the data is not logged to file.
+i.e. if every speed and current reading during the 5 minutes is 0, the container will be empty and nothing logged.
+
+
+Removed the alarms processing functionality. i.e. If muted and a different device alarms,
+the mute won't be overriden. So still need to figure out how to make this functional.
+
+RTC seems to be working ok.
+In /etc/init.d/s4wd in do_start()
+/usr/sbin/modrtc -s 2     called twice.
+First call to sync Linux time to RTC is 1 hour behind.
+Second call syncs. Why ???
+
+
+
+
+TODO:
+Add battery charge profile logging. So have a different timer to the discharge one and also have a different
+slot in loggeragent to write to file. Add activate the logging by checking the bank voltage i.e. 
+if V >= 52V then we must be charging so log to file. 
+Charge profile, we are interested in Voltage, all 12 battery temperatures and the 2 ambient temperatures.
+
+Backup file for /home/s4wd/config/s4wd.ini. If reading from config fails then
+read from backup. May lose settings but atleast serial numbers will be correct.
+User can just re-apply settings.
+
+1-wire temperature readings 85. /usr/src/1w/apps/s4wd/s4wd.c 
+Needs to hold temperature of last readings so it can compare new with old.
+If |new - old| > 10, then new reading is fault. It already samples up to 3 times to acquire
+accurate reading but CRC can still be valid even though conversion fails and gives 85 reading. 
+If not then set reading as 200. 
+On Qt app, in busagent.cpp, if reading == 200.0 then send 'FAULT' keyword back to main.
+
+
+Completely remove comparator sense and remove PCA9536 -i option to read comparator or just disable '
+the 12VBatSense signal being fired to the Ioagent slot.
+
+qDebug() to log files while the daemon is running.
+
+wifi check servive ??
+
+Maybe have some kind of socket server that is initiated by s4wd app and waits for a heartbeat.
+If it does not get the heartbeat then shutdown the app and restart it. I say this because even though there is a service,
+/etc/init.d/s4wdcheck that checks for the running s4wd, it may still be running but possible one of the threads
+may have halted. Or maybe check on each of the threads from the main process in Qt i.e. thread->isActive() ???
+
+
+Lipo battery:
+Need to plug this in. 
+
+GPS connector:
+Need to make proper connector for the GPS cable. Just header pins in connector at the moment and the jumper
+cables are just folded inside the box.
+
